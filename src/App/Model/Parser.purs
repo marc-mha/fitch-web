@@ -11,6 +11,8 @@ import Parsing.String
 import Prelude hiding (between)
 
 import Control.Lazy (defer)
+import Data.Function (apply)
+import Data.Identity (Identity(..))
 import Data.List (toUnfoldable)
 import Data.List.NonEmpty (toList)
 import Data.String.CodeUnits (fromCharArray)
@@ -30,16 +32,16 @@ parens = between (string "(") (string ")")
 parseAtom :: Parser String String
 parseAtom = fromCharArray <<< toUnfoldable <<< toList <$> many1 alphaNum
 
--- prefix :: forall a. String -> (a -> a) -> Operator (Parser String) a
+prefix :: forall a. String -> (a -> a) -> Operator Identity String a
 prefix name f = Prefix (f <$ string name)
 
--- postfix :: forall a. String -> (a -> a) -> Operator Parser String a
+postfix :: forall a. String -> (a -> a) -> Operator Identity String a
 postfix name f = Postfix (f <$ string name)
 
--- binaryL :: forall a. String -> (a -> a -> a) -> Operator Parser String a
+binaryL :: forall a. String -> (a -> a -> a) -> Operator Identity String a
 binaryL name f = Infix (f <$ string name <* skipSpaces) AssocLeft
 
--- binaryR :: forall a. String -> (a -> a -> a) -> Operator Parser String a
+binaryR :: forall a. String -> (a -> a -> a) -> Operator Identity String a
 binaryR name f = Infix (f <$ string name <* skipSpaces) AssocRight
 
 parseFormula :: Parser String Formula
@@ -70,6 +72,4 @@ parseTerm = defer \_ ->
   ) <* skipSpaces
 
 readFormula :: String -> Maybe Formula
-readFormula s = case runParser s (parseFormula <* eof) of
-  Right f -> Just f
-  _ -> Nothing
+readFormula s = either (const Nothing) (apply Just) (runParser s (parseFormula <* eof))
