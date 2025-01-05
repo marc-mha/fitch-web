@@ -37,7 +37,7 @@ flattenProof' :: Scope -> Proof -> List (Scoped FlatConclusion)
 flattenProof' s (Proof ass concs) = (Tuple s (Assumption ass)) : (enumerate (reverse concs) >>= uncurry (flattenConclusion' s))
 
 flattenProof :: Proof -> FlatProof
-flattenProof = flattenProof' Nil
+flattenProof = flattenProof' (singleton 0)
 
 -- FIX: Add proper way to enforce only jumping one scope when making a subproof
 unflattenConclusions :: Scope -> List (Scoped FlatConclusion) -> Maybe (List (Conclusion))
@@ -59,8 +59,8 @@ unflattenProof _ = Nothing
 
 unlines' :: List String -> String
 unlines' Nil = ""
-unlines' (s : Nil) = s
-unlines' (s : ss) = s <> "\n" <> unlines' ss
+-- unlines' (s : Nil) = s
+unlines' (s : ss) = "\n" <> s <> unlines' ss
 
 showScope :: Int -> String
 showScope = (foldl (<>) "") <<< flip replicate "|   "
@@ -70,11 +70,18 @@ showSub' n (SubFormula f) = showScope n <> show f
 showSub' n (SubProof p) = showProof' (n + 1) p
 
 showProof' :: Int -> Proof -> String
-showProof' n (Proof ass concs) = showScope (n - 1) <> "|__ " <> show ass <> "\n" <> (unlines' <<< map (showSub' n) <<< reverse) concs
+showProof' n (Proof ass concs) = showScope (n - 1) <> "|__ " <> show' ass <> (unlines' <<< map (showSub' n) <<< reverse) concs
+  where
+  show' FTrue = ""
+  show' x = show x
 
 showProof :: Proof -> String
 showProof = showProof' 1
 
-getFormula :: Conclusion -> Maybe Formula
-getFormula (SubFormula f) = Just f
-getFormula _ = Nothing
+extractFormula :: Conclusion -> Maybe Formula
+extractFormula (SubFormula f) = Just f
+extractFormula _ = Nothing
+
+extractFlatFormula :: FlatConclusion -> Formula
+extractFlatFormula (Assumption f) = f
+extractFlatFormula (Consequence f) = f

@@ -2,6 +2,7 @@ module Parser where
 
 import Data.Array hiding (many, reverse, toUnfoldable)
 import Data.Either
+import Data.List
 import Data.Maybe hiding (optional)
 import Formula
 import Parsing
@@ -10,15 +11,17 @@ import Parsing.Expr
 import Parsing.String
 import Prelude hiding (between)
 import Proof
+import Verification
 
 import Control.Lazy (defer)
 import Data.Function (apply)
 import Data.Identity (Identity(..))
-import Data.List
 import Data.List.NonEmpty (toList)
 import Data.String.CodeUnits (fromCharArray)
-import Parsing.String.Basic (skipSpaces)
+import Data.Tuple (Tuple(..), uncurry)
+import Parsing.String.Basic (intDecimal, skipSpaces)
 import Parsing.Token (alphaNum)
+import Verification (Capture)
 
 parseTrue :: Parser String Unit
 parseTrue = string "top" $> unit
@@ -84,6 +87,19 @@ parseProof = defer \_ -> do
   string "|-" *> skipSpaces
   concs <- parseConclusions
   pure (Proof (maybe FTrue identity ass) concs)
+
+parseCapture :: Parser String Capture
+parseCapture = ((uncurry Lines <$> intDecimal2) <|> Line <$> intDecimal)
+  where
+  intDecimal2 :: Parser String (Tuple Int Int)
+  intDecimal2 = do
+    n <- intDecimal
+    skipSpaces *> string "-" *> skipSpaces
+    m <- intDecimal
+    pure (Tuple n m)
+
+parseCaptures :: Parser String (List Capture)
+parseCaptures = parseCapture `sepBy` (string "," *> skipSpaces)
 
 readParser :: forall a. Parser String a -> String -> Maybe a
 readParser p s = either (const Nothing) (apply Just) (runParser s (p <* eof))

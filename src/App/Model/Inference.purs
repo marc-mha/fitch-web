@@ -26,7 +26,7 @@ contradiction cs = FFalse `elem` cs || contradiction' cs
     go b bs = (FNot b) `elem` bs
 
 findContradiction :: List Conclusion -> Boolean
-findContradiction = contradiction <<< catMaybes <<< map getFormula
+findContradiction = contradiction <<< catMaybes <<< map extractFormula
 
 notIntro :: Inference
 notIntro [ SubProof (Proof a as) ]
@@ -85,3 +85,13 @@ iffElimR :: Inference
 iffElimR [ SubFormula (FIff a b), SubFormula c ]
   | b == c = pure a
 iffElimR _ = empty
+
+canReplace :: Formula -> Formula -> Boolean
+canReplace _ FMeta = true
+canReplace FMeta _ = false
+canReplace (FNot a) (FNot b) = canReplace a b
+canReplace (FAnd a b) (FAnd c d) = canReplace a c && canReplace b d
+canReplace (FOr a b) (FOr c d) = canReplace a c && canReplace b d
+canReplace (FImp a b) (FImp c d) = canReplace a c && canReplace b d
+canReplace (FIff a b) (FIff c d) = canReplace a c && canReplace b d
+canReplace _ _ = false
