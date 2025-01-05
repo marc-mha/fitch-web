@@ -74,3 +74,7 @@ showProof' n (Proof ass concs) = showScope (n - 1) <> "|__ " <> show ass <> "\n"
 
 showProof :: Proof -> String
 showProof = showProof' 1
+
+getFormula :: Conclusion -> Maybe Formula
+getFormula (SubFormula f) = Just f
+getFormula _ = Nothing
