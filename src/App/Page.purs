@@ -30,7 +30,7 @@ render input =
   HH.div_
     [ renderMaybe
         (renderProof <$> (readProof input))
-    -- [ renderProof (Proof FTrue $ Array.toUnfoldable [ SubFormula FFalse, SubProof (Proof FTrue $ Array.toUnfoldable [ SubFormula FFalse ]) ])
+    , HH.br_
     , HH.input
         [ HP.type_ HP.InputText
         , HP.placeholder "Type in a formula..."

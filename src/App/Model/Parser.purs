@@ -2,7 +2,7 @@ module Parser where
 
 import Data.Array hiding (many, reverse, toUnfoldable)
 import Data.Either
-import Data.Maybe
+import Data.Maybe hiding (optional)
 import Formula
 import Parsing
 import Parsing.Combinators
@@ -77,10 +77,10 @@ parseConclusion = defer \_ -> parens (SubProof <$> parseProof) <|> (SubFormula <
 
 parseProof :: Parser String Proof
 parseProof = defer \_ -> do
-  ass <- parseFormula
+  ass <- optionMaybe parseFormula
   string "|-" *> skipSpaces
   concs <- reverse <$> (parseConclusion `sepBy` (string "," <* skipSpaces))
-  pure (Proof ass concs)
+  pure (Proof (maybe FTrue identity ass) concs)
 
 readParser :: forall a. Parser String a -> String -> Maybe a
 readParser p s = either (const Nothing) (apply Just) (runParser s (p <* eof))
