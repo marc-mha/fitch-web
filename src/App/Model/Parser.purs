@@ -75,11 +75,14 @@ parseTerm = defer \_ ->
 parseConclusion :: Parser String Conclusion
 parseConclusion = defer \_ -> parens (SubProof <$> parseProof) <|> (SubFormula <$> parseFormula)
 
+parseConclusions :: Parser String (List Conclusion)
+parseConclusions = defer \_ -> reverse <$> (parseConclusion `sepBy` (string "," <* skipSpaces))
+
 parseProof :: Parser String Proof
 parseProof = defer \_ -> do
   ass <- optionMaybe parseFormula
   string "|-" *> skipSpaces
-  concs <- reverse <$> (parseConclusion `sepBy` (string "," <* skipSpaces))
+  concs <- parseConclusions
   pure (Proof (maybe FTrue identity ass) concs)
 
 readParser :: forall a. Parser String a -> String -> Maybe a

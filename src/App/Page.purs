@@ -29,14 +29,14 @@ render :: forall cs m. State -> H.ComponentHTML Action cs m
 render input =
   HH.div_
     [ renderMaybe
-        (renderProof <$> (readProof input))
+        (renderProof <<< Proof FTrue <$> (readParser parseConclusions input))
     , HH.br_
     , HH.input
         [ HP.type_ HP.InputText
-        , HP.placeholder "Type in a formula..."
+        , HP.placeholder "Type in a proof..."
         , HE.onValueInput Update
         ]
     ]
 
 handleAction :: forall cs o m. Action -> H.HalogenM State Action cs o m Unit
-handleAction (Update s) = H.modify_ (\_ -> s)
+handleAction (Update s) = H.modify_ (const s)
