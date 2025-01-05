@@ -14,14 +14,15 @@ import Proof
 import Verification
 
 import Control.Lazy (defer)
+import Data.Foldable (lookup)
 import Data.Function (apply)
-import Data.Identity (Identity(..))
+import Data.Identity (Identity)
 import Data.List.NonEmpty (toList)
 import Data.String.CodeUnits (fromCharArray)
 import Data.Tuple (Tuple(..), uncurry)
+import Inference
 import Parsing.String.Basic (intDecimal, skipSpaces)
 import Parsing.Token (alphaNum)
-import Verification (Capture)
 
 parseTrue :: Parser String Unit
 parseTrue = string "top" $> unit
@@ -109,3 +110,18 @@ readFormula = readParser parseFormula
 
 readProof :: String -> Maybe Proof
 readProof = readParser parseProof
+
+ruleTable :: Array (Tuple String Inference)
+ruleTable =
+  [ Tuple "&I" andIntro
+  , Tuple "&EL" andElimL
+  , Tuple "&ER" andElimR
+  , Tuple "|IL" orIntroL
+  , Tuple "|IR" orIntroR
+  , Tuple "|E" orElim
+  ]
+
+readRule :: String -> Maybe Rule
+readRule "Ass" = Just Ass
+readRule "Reit" = Just Reit
+readRule r = Inf <$> lookup r ruleTable

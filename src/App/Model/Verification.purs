@@ -30,9 +30,16 @@ getProofProof p n m = do
   guard (length s == m - n + 1)
   -- NOTE: Take the tail to get rid of the scope jump that is caused by starting a proof
   scope <- tail =<< fst <$> head s
-  Tuple scope <$> (unflattenProof s)
+  case s of
+    --- Edge case of A |- A
+    ass : Nil -> pure $ Tuple scope (Proof (extractFlatFormula $ snd ass) ((SubFormula $ extractFlatFormula $ snd ass) : Nil))
+    _ -> Tuple scope <$> (unflattenProof s)
 
 getProofCapture :: Proof -> Capture -> Maybe (Scoped Conclusion)
 getProofCapture p (Line n) = rmap SubFormula <$> getProofFormula p n
 getProofCapture p (Lines n m) = rmap SubProof <$> getProofProof p n m
 
+data Rule
+  = Ass
+  | Reit
+  | Inf Inference
