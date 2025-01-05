@@ -1,14 +1,18 @@
 module App.Page where
 
+import Data.List
 import Data.Maybe
 import Formula
+import Parser
 import Prelude
+import Proof
+import App.Render
 
+import Data.Array as Array
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Parser (readFormula)
 
 type State = String
 data Action = Update String
@@ -21,15 +25,12 @@ component =
     , eval: H.mkEval H.defaultEval { handleAction = handleAction }
     }
 
-renderFormula :: Maybe Formula -> String
-renderFormula (Just f) = show f
-renderFormula (Nothing) = "Could not parse!"
-
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render input =
   HH.div_
-    [ HH.p_
-        [ HH.text (renderFormula $ readFormula input) ]
+    [ renderMaybe
+        (renderProof <$> (readProof input))
+    -- [ renderProof (Proof FTrue $ Array.toUnfoldable [ SubFormula FFalse, SubProof (Proof FTrue $ Array.toUnfoldable [ SubFormula FFalse ]) ])
     , HH.input
         [ HP.type_ HP.InputText
         , HP.placeholder "Type in a formula..."

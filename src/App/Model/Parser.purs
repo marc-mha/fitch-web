@@ -1,6 +1,6 @@
 module Parser where
 
-import Data.Array
+import Data.Array hiding (many, reverse, toUnfoldable)
 import Data.Either
 import Data.Maybe
 import Formula
@@ -9,21 +9,22 @@ import Parsing.Combinators
 import Parsing.Expr
 import Parsing.String
 import Prelude hiding (between)
+import Proof
 
 import Control.Lazy (defer)
 import Data.Function (apply)
 import Data.Identity (Identity(..))
-import Data.List (toUnfoldable)
+import Data.List
 import Data.List.NonEmpty (toList)
 import Data.String.CodeUnits (fromCharArray)
 import Parsing.String.Basic (skipSpaces)
 import Parsing.Token (alphaNum)
 
 parseTrue :: Parser String Unit
-parseTrue = string "t" $> unit
+parseTrue = string "top" $> unit
 
 parseFalse :: Parser String Unit
-parseFalse = string "f" $> unit
+parseFalse = string "bot" $> unit
 
 parens :: forall a. Parser String a -> Parser String a
 parens = between (string "(") (string ")")
@@ -71,5 +72,21 @@ parseTerm = defer \_ ->
       <|> (FAtom <$> parseAtom)
   ) <* skipSpaces
 
+parseConclusion :: Parser String Conclusion
+parseConclusion = defer \_ -> parens (SubProof <$> parseProof) <|> (SubFormula <$> parseFormula)
+
+parseProof :: Parser String Proof
+parseProof = defer \_ -> do
+  ass <- parseFormula
+  string "|-" *> skipSpaces
+  concs <- reverse <$> (parseConclusion `sepBy` (string "," <* skipSpaces))
+  pure (Proof ass concs)
+
+readParser :: forall a. Parser String a -> String -> Maybe a
+readParser p s = either (const Nothing) (apply Just) (runParser s (p <* eof))
+
 readFormula :: String -> Maybe Formula
-readFormula s = either (const Nothing) (apply Just) (runParser s (parseFormula <* eof))
+readFormula = readParser parseFormula
+
+readProof :: String -> Maybe Proof
+readProof = readParser parseProof

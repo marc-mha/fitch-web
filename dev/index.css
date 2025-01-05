@@ -1,0 +1,8 @@
+.scope {
+  white-space: pre-line;
+  border-left: thin solid black;
+}
+
+.proof {
+  padding-left: 10px;
+}

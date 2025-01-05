@@ -18,11 +18,13 @@ to generate this file without the comments in this block.
   , "effect"
   , "either"
   , "halogen"
+  , "identity"
   , "lists"
   , "maybe"
   , "parsing"
   , "prelude"
   , "strings"
+  , "tuples"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
