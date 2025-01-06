@@ -51,10 +51,11 @@ binaryR name f = Infix (f <$ string name <* skipSpaces) AssocRight
 
 parseFormula :: Parser String Formula
 parseFormula = defer \_ -> buildExprParser
-  [ [ prefix "¬" FNot
-    , prefix "~" FNot
-    ]
-  , [ binaryR "∧" FAnd
+  [
+    -- [ prefix "¬" FNot
+    -- , prefix "~" FNot
+    -- ],
+    [ binaryR "∧" FAnd
     , binaryR "&" FAnd
     , binaryR "∨" FOr
     , binaryR "|" FOr
@@ -68,9 +69,14 @@ parseFormula = defer \_ -> buildExprParser
   ]
   parseTerm
 
+--
+-- parseNot :: Parser String Formula
+-- parseNot = defer \_ -> FNot <$> ((string "~" <|> string "¬") *> parseTerm)
+
 parseTerm :: Parser String Formula
 parseTerm = defer \_ ->
   ( parens parseFormula
+      <|> (FNot <$> ((string "~" <|> string "¬") *> parseTerm))
       <|> (FTrue <$ parseTrue)
       <|> (FFalse <$ parseFalse)
       <|> (FAtom <$> parseAtom)
