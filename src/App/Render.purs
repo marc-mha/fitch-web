@@ -30,15 +30,15 @@ renderProof (Proof ass concs) =
   show' FTrue = "__"
   show' f = show f
 
-renderFitch :: forall w i. Proof -> Array (Maybe Rule) -> HH.HTML w i
-renderFitch p rules =
-  let
-    numbers = range 0 (length $ flattenProof p)
-    numberColumn = HH.div [ HP.class_ (HC.ClassName "numbers") ] $ intersperse (HH.br_) $ map (HH.a_ <<< pure <<< HH.text <<< show) numbers
-    rulesColumn = HH.div [ HP.class_ (HC.ClassName "rules") ] $ intersperse (HH.br_) $ map (HH.a_ <<< pure <<< HH.text <<< (maybe "" show)) rules
-  in
-    HH.table_ [ HH.tr_ (map (HH.td_ <<< pure) [ numberColumn, renderProof p, rulesColumn ]) ]
-
+-- renderFitch :: forall w i. Proof -> Array (Maybe Rule) -> HH.HTML w i
+-- renderFitch p rules =
+--   let
+--     numbers = range 0 (length $ flattenProof p)
+--     numberColumn = HH.div [ HP.class_ (HC.ClassName "numbers") ] $ intersperse (HH.br_) $ map (HH.a_ <<< pure <<< HH.text <<< show) numbers
+--     rulesColumn = HH.div [ HP.class_ (HC.ClassName "rules") ] $ intersperse (HH.br_) $ map (HH.a_ <<< pure <<< HH.text <<< (maybe "" show)) rules
+--   in
+--     HH.table_ [ HH.tr_ (map (HH.td_ <<< pure) [ numberColumn, renderProof p, rulesColumn ]) ]
+--
 padScope :: Scope -> String
 padScope = (foldl (<>) "") <<< flip replicate "\x2005\x2005\x2005\x2005|" <<< length
 
