@@ -115,16 +115,16 @@ ruleTable :: Array (Tuple String Rule)
 ruleTable =
   [ Tuple "A" Ass
   , Tuple "R" Reit
-  , Tuple "∧I" (Inf andIntro)
-  , Tuple "∧E" (Inf andElim)
-  , Tuple "∨I" (Inf orIntro)
-  , Tuple "∨E" (Inf orElim)
-  , Tuple "¬I" (Inf notIntro)
-  , Tuple "¬E" (Inf notElim)
-  , Tuple "→I" (Inf impIntro)
-  , Tuple "→E" (Inf impElim)
-  , Tuple "↔I" (Inf iffIntro)
-  , Tuple "↔E" (Inf iffElim)
+  , Tuple "∧I" (Inf "∧I" andIntro)
+  , Tuple "∧E" (Inf "∧E" andElim)
+  , Tuple "∨I" (Inf "∨I" orIntro)
+  , Tuple "∨E" (Inf "∨E" orElim)
+  , Tuple "¬I" (Inf "¬I" notIntro)
+  , Tuple "¬E" (Inf "¬E" notElim)
+  , Tuple "→I" (Inf "→I" impIntro)
+  , Tuple "→E" (Inf "→E" impElim)
+  , Tuple "↔I" (Inf "↔I" iffIntro)
+  , Tuple "↔E" (Inf "↔E" iffElim)
   ]
 
 readRule :: String -> Maybe Rule

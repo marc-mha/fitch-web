@@ -54,7 +54,7 @@ g input = HH.div_ <<< toUnfoldable <<< ((=<<) renderConclusion) <$> f input
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render st =
   HH.div_
-    [ renderMaybe (renderProof <$> material)
+    [ renderMaybe (renderFlatProof (Just Reit : Just Ass : Nil) <<< flattenProof <$> material)
     , HH.br_
     , renderMaybe
         -- (renderProof <<< Proof FTrue <$> (readParser parseConclusions st.input))
@@ -65,7 +65,7 @@ render st =
         ( case st.rule of
             Just Ass -> pure $ HH.text "Assumption"
             Just Reit -> pure $ HH.text "Reiteration"
-            Just (Inf inf) -> HH.text <<< show <$> (inf =<< (toUnfoldable <$> (h $ f st.input)))
+            Just (Inf _ inf) -> HH.text <<< show <$> (inf =<< (toUnfoldable <$> (h $ f st.input)))
             _ -> empty
         )
     , HH.br_

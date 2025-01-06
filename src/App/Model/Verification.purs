@@ -47,7 +47,12 @@ getProofCapture p (Lines n m) = rmap SubProof <$> getProofProof p n m
 data Rule
   = Ass
   | Reit
-  | Inf Inference
+  | Inf String Inference
+
+instance Show Rule where
+  show Ass = "A"
+  show Reit = "R"
+  show (Inf tag _) = tag
 
 infer :: Scope -> Proof -> Array Capture -> Inference -> Maybe (List Formula)
 infer scope p captures inf = do
