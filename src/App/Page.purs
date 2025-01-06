@@ -10,6 +10,7 @@ import Prelude
 import Proof
 import Verification
 
+import Control.MonadPlus (empty)
 import Data.Array as Array
 import Data.Traversable (sequence, traverse)
 import Halogen as H
@@ -21,7 +22,7 @@ type State = { input :: String, rule :: Maybe Rule }
 data Action = UpdateInput String | UpdateRule String
 
 material :: Maybe Proof
-material = readProof "|-(~A|B|-(A|-(~A|-(~B|-A,~A),~(~B),B),(B|-),~A|B,B),A->B),(~A|B)->(A->B)"
+material = readProof "|-(~A|B|-(A|-(~A|-(~B|-A,~A),~(~B),B),(B|-),~A|B,B),A->B),(A->B|-~A|B),(~A|B)<->(A->B)"
 
 component :: forall q i o m. H.Component q i o m
 component =
@@ -43,6 +44,10 @@ c input = join $ (=<<) (map (sequence)) $ map sequence $ map (map (flap a)) (b i
 f :: String -> Maybe (List (Conclusion))
 f input = map (map snd) (c input)
 
+h :: Maybe (List (Conclusion)) -> List (List (Conclusion))
+h Nothing = Nil
+h (Just x) = singleton x
+
 g :: forall w i. String -> Maybe (HH.HTML w i)
 g input = HH.div_ <<< toUnfoldable <<< ((=<<) renderConclusion) <$> f input
 
@@ -52,16 +57,16 @@ render st =
     [ renderMaybe (renderProof <$> material)
     , HH.br_
     , renderMaybe
-        -- (renderProof <<< Proof FTrue <$> (readParser parseConclusions input))
+        -- (renderProof <<< Proof FTrue <$> (readParser parseConclusions st.input))
         -- (renderProof <<< Proof FTrue <$> f input)
         (g st.input)
 
-    , renderMaybe
+    , renderList
         ( case st.rule of
-            Just Ass -> Just $ HH.text "Ass"
-            Just Reit -> Just $ HH.text "Reit"
-            Just (Inf inf) -> HH.text <<< show <$> (inf =<< (toUnfoldable <$> (f st.input)))
-            _ -> Nothing
+            Just Ass -> pure $ HH.text "Assumption"
+            Just Reit -> pure $ HH.text "Reiteration"
+            Just (Inf inf) -> HH.text <<< show <$> (inf =<< (toUnfoldable <$> (h $ f st.input)))
+            _ -> empty
         )
     , HH.br_
     , HH.input
@@ -72,8 +77,6 @@ render st =
     , HH.select
         [ HE.onValueInput UpdateRule ]
         ( [ HH.option_ [ HH.text "" ]
-          , HH.option_ [ HH.text "Ass" ]
-          , HH.option_ [ HH.text "Reit" ]
           ]
             <> (map (HH.option_ <<< Array.singleton <<< HH.text <<< fst) ruleTable)
         )

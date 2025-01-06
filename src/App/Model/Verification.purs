@@ -1,16 +1,18 @@
 module Verification where
 
-import Data.List
+import Control.MonadPlus
+import Data.List hiding (unzip)
 import Data.Maybe
+import Data.Tuple
 import Formula
 import Inference
 import Prelude
 import Proof
 import Scope
 
-import Control.MonadPlus (guard)
+import Data.Array (unzip)
 import Data.Bifunctor (rmap)
-import Data.Tuple
+import Data.Traversable (sequence, traverse)
 
 data Capture = Line Int | Lines Int Int
 
@@ -30,10 +32,13 @@ getProofProof p n m = do
   guard (length s == m - n + 1)
   -- NOTE: Take the tail to get rid of the scope jump that is caused by starting a proof
   scope <- tail =<< fst <$> head s
-  case s of
-    --- Edge case of A |- A
-    ass : Nil -> pure $ Tuple scope (Proof (extractFlatFormula $ snd ass) ((SubFormula $ extractFlatFormula $ snd ass) : Nil))
-    _ -> Tuple scope <$> (unflattenProof s)
+
+  --   --- Edge case of A |- A
+  -- case s of
+  --   ass : Nil -> pure $ Tuple scope (Proof (extractFlatFormula $ snd ass) ((SubFormula $ extractFlatFormula $ snd ass) : Nil))
+  --   _ -> Tuple scope <$> (unflattenProof s)
+
+  Tuple scope <$> (unflattenProof s)
 
 getProofCapture :: Proof -> Capture -> Maybe (Scoped Conclusion)
 getProofCapture p (Line n) = rmap SubFormula <$> getProofFormula p n
@@ -43,3 +48,14 @@ data Rule
   = Ass
   | Reit
   | Inf Inference
+
+infer :: Scope -> Proof -> Array Capture -> Inference -> Maybe (List Formula)
+infer scope p captures inf = do
+  (Tuple cscopes premises) :: Tuple (Array Scope) (Array Conclusion) <- unzip <$> traverse (getProofCapture p) captures
+
+  -- Check that all premises are in the same scope
+  -- NOTE: Change to `inScope` to remove need for reiteration
+  guard (all ((scope `isScope` _)) cscopes)
+
+  -- Return the result of the inference
+  pure (inf premises)

@@ -29,6 +29,13 @@ instance Show FlatConclusion where
 
 type FlatProof = List (Scoped FlatConclusion)
 
+assumption :: Proof -> Formula
+assumption (Proof a _) = a
+
+-- NOTE: Use snoc as assumptions are usually the first intended conclusion
+conclusions :: Proof -> List Conclusion
+conclusions (Proof a cs) = snoc cs (SubFormula a)
+
 flattenConclusion' :: Scope -> Int -> Conclusion -> List (Scoped FlatConclusion)
 flattenConclusion' s _ (SubFormula f) = pure (Tuple s (Consequence f))
 flattenConclusion' s n (SubProof p) = flattenProof' (n : s) p

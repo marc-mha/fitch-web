@@ -111,17 +111,21 @@ readFormula = readParser parseFormula
 readProof :: String -> Maybe Proof
 readProof = readParser parseProof
 
-ruleTable :: Array (Tuple String Inference)
+ruleTable :: Array (Tuple String Rule)
 ruleTable =
-  [ Tuple "&I" andIntro
-  , Tuple "&EL" andElimL
-  , Tuple "&ER" andElimR
-  , Tuple "|IL" orIntroL
-  , Tuple "|IR" orIntroR
-  , Tuple "|E" orElim
+  [ Tuple "A" Ass
+  , Tuple "R" Reit
+  , Tuple "∧I" (Inf andIntro)
+  , Tuple "∧E" (Inf andElim)
+  , Tuple "∨I" (Inf orIntro)
+  , Tuple "∨E" (Inf orElim)
+  , Tuple "¬I" (Inf notIntro)
+  , Tuple "¬E" (Inf notElim)
+  , Tuple "→I" (Inf impIntro)
+  , Tuple "→E" (Inf impElim)
+  , Tuple "↔I" (Inf iffIntro)
+  , Tuple "↔E" (Inf iffElim)
   ]
 
 readRule :: String -> Maybe Rule
-readRule "Ass" = Just Ass
-readRule "Reit" = Just Reit
-readRule r = Inf <$> lookup r ruleTable
+readRule = flip lookup ruleTable
