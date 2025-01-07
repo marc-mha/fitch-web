@@ -18,6 +18,7 @@ to generate this file without the comments in this block.
   , "control"
   , "effect"
   , "either"
+  , "foldable-traversable"
   , "halogen"
   , "identity"
   , "lists"
@@ -26,6 +27,7 @@ to generate this file without the comments in this block.
   , "prelude"
   , "strings"
   , "tuples"
+  , "unfoldable"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

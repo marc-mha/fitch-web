@@ -33,11 +33,6 @@ getProofProof p n m = do
   -- NOTE: Take the tail to get rid of the scope jump that is caused by starting a proof
   scope <- tail =<< fst <$> head s
 
-  --   --- Edge case of A |- A
-  -- case s of
-  --   ass : Nil -> pure $ Tuple scope (Proof (extractFlatFormula $ snd ass) ((SubFormula $ extractFlatFormula $ snd ass) : Nil))
-  --   _ -> Tuple scope <$> (unflattenProof s)
-
   Tuple scope <$> (unflattenProof s)
 
 getProofCapture :: Proof -> Capture -> Maybe (Scoped Conclusion)
@@ -64,3 +59,19 @@ infer scope p captures inf = do
 
   -- Return the result of the inference
   pure (inf premises)
+
+verify :: Proof -> Scoped FlatConclusion -> (Tuple Rule (Array Capture)) -> Maybe Boolean
+verify p (Tuple scope f) (Tuple r cs) = do
+  inferences :: List Formula <- case r of
+    Ass -> case f of
+      Assumption _ -> pure (singleton FMeta)
+      Consequence _ -> empty
+    Reit -> case cs of
+      [ Line l ] -> do
+        (Tuple cscope f') <- getProofFormula p l
+        guard (scope `inScope` cscope && not (scope `isScope` cscope))
+        pure (singleton f')
+      _ -> empty
+    Inf _ inf -> infer scope p cs inf
+  pure <<< any (canReplace (extractFlatFormula f)) $ inferences
+-- pure <<< any ((==) (extractFlatFormula f)) $ inferences

@@ -39,6 +39,9 @@ conclusions (Proof a cs) = snoc cs (SubFormula a)
 appendProof :: Formula -> Proof -> Proof
 appendProof f (Proof a as) = Proof a (SubFormula f : as)
 
+appendFlatProof :: Scoped FlatConclusion -> FlatProof -> FlatProof
+appendFlatProof f p = snoc p f
+
 flattenConclusion' :: Scope -> Int -> Conclusion -> List (Scoped FlatConclusion)
 flattenConclusion' s _ (SubFormula f) = pure (Tuple s (Consequence f))
 flattenConclusion' s n (SubProof p) = flattenProof' (n : s) p

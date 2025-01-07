@@ -103,6 +103,9 @@ iffElim prems = iffElimL prems <> iffElimR prems
 canReplace :: Formula -> Formula -> Boolean
 canReplace _ FMeta = true
 canReplace FMeta _ = false
+canReplace FTrue FTrue = true
+canReplace FFalse FFalse = true
+canReplace (FAtom s) (FAtom t) = s == t
 canReplace (FNot a) (FNot b) = canReplace a b
 canReplace (FAnd a b) (FAnd c d) = canReplace a c && canReplace b d
 canReplace (FOr a b) (FOr c d) = canReplace a c && canReplace b d

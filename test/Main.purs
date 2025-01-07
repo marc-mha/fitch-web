@@ -9,7 +9,7 @@ import Parser
 import Proof
 
 material :: Maybe Proof
-material = readProof "|-(~A|B|-(A|-(~A|-(~B|-A,~A),~(~B),B),(B|-),~A|B,B),A->B),(~A|B)->(A->B)"
+material = readLineProof "|-(~A|B|-(A|-(~A|-(~B|-A,~A),~(~B),B),(B|-),~A|B,B),A->B),(~A|B)->(A->B)"
 
 main :: Effect Unit
 main = do

@@ -1,10 +1,11 @@
 module Parser where
 
-import Data.Array hiding (many, reverse, toUnfoldable)
+import Data.Array hiding (many, reverse, toUnfoldable, length, dropWhile)
 import Data.Either
-import Data.List
+import Data.List hiding (many)
 import Data.Maybe hiding (optional)
 import Formula
+import Inference
 import Parsing
 import Parsing.Combinators
 import Parsing.Expr
@@ -14,14 +15,15 @@ import Proof
 import Verification
 
 import Control.Lazy (defer)
+import Control.MonadPlus (guard)
 import Data.Foldable (lookup)
 import Data.Function (apply)
 import Data.Identity (Identity)
 import Data.List.NonEmpty (toList)
+import Data.String (joinWith)
 import Data.String.CodeUnits (fromCharArray)
-import Data.Tuple (Tuple(..), uncurry)
-import Inference
-import Parsing.String.Basic (intDecimal, skipSpaces)
+import Data.Tuple (Tuple(..), fst, uncurry)
+import Parsing.String.Basic (intDecimal, skipSpaces, space)
 import Parsing.Token (alphaNum)
 
 parseTrue :: Parser String Unit
@@ -44,10 +46,10 @@ postfix :: forall a. String -> (a -> a) -> Operator Identity String a
 postfix name f = Postfix (f <$ string name)
 
 binaryL :: forall a. String -> (a -> a -> a) -> Operator Identity String a
-binaryL name f = Infix (f <$ string name <* skipSpaces) AssocLeft
+binaryL name f = Infix (f <$ string name <* (many (string " "))) AssocLeft
 
 binaryR :: forall a. String -> (a -> a -> a) -> Operator Identity String a
-binaryR name f = Infix (f <$ string name <* skipSpaces) AssocRight
+binaryR name f = Infix (f <$ string name <* (many (string " "))) AssocRight
 
 parseFormula :: Parser String Formula
 parseFormula = defer \_ -> buildExprParser
@@ -69,10 +71,6 @@ parseFormula = defer \_ -> buildExprParser
   ]
   parseTerm
 
---
--- parseNot :: Parser String Formula
--- parseNot = defer \_ -> FNot <$> ((string "~" <|> string "¬") *> parseTerm)
-
 parseTerm :: Parser String Formula
 parseTerm = defer \_ ->
   ( parens parseFormula
@@ -80,33 +78,71 @@ parseTerm = defer \_ ->
       <|> (FTrue <$ parseTrue)
       <|> (FFalse <$ parseFalse)
       <|> (FAtom <$> parseAtom)
-  ) <* skipSpaces
+  ) <* (many (string " "))
 
-parseConclusion :: Parser String Conclusion
-parseConclusion = defer \_ -> parens (SubProof <$> parseProof) <|> (SubFormula <$> parseFormula)
+parseConsScopeLine :: Parser String Unit
+parseConsScopeLine = unit <$ string "| "
 
-parseConclusions :: Parser String (List Conclusion)
-parseConclusions = defer \_ -> reverse <$> (parseConclusion `sepBy` (string "," <* skipSpaces))
+parseAssScopeLine :: Parser String Unit
+parseAssScopeLine = unit <$ string "|_"
 
-parseProof :: Parser String Proof
-parseProof = defer \_ -> do
+parseScopedFormula :: Int -> Parser String Formula
+parseScopedFormula n = do
+  s :: Int <- length <$> many (parseConsScopeLine)
+  guard (s == n)
+  parseFormula
+
+parseConclusions :: Int -> Parser String (List Conclusion)
+parseConclusions n = do
+  -- NOTE: Need the tries as what distinguishes each case is consumed
+  many $
+    ( (try (SubProof <$> parseProof n))
+        <|>
+          try ((SubFormula <$> parseScopedFormula n) <* (string "\n"))
+    )
+
+parseProof :: Int -> Parser String Proof
+parseProof n = do
+  s :: Int <- length <$> many (parseConsScopeLine)
+  parseAssScopeLine
+  guard (s == n)
+  -- Try to parse a formula, otherwise treat it as the empty (true) assumption
+  ass <- maybe FTrue (identity) <$> (optionMaybe parseFormula)
+  _ <- string "\n"
+  concs <- reverse <$> parseConclusions (s + 1)
+  pure (Proof ass concs)
+
+parseLineConclusion :: Parser String Conclusion
+parseLineConclusion = defer \_ -> parens (SubProof <$> parseLineProof) <|> (SubFormula <$> parseFormula)
+
+parseLineConclusions :: Parser String (List Conclusion)
+parseLineConclusions = defer \_ -> reverse <$> (parseLineConclusion `sepBy` (string "," <* (many (string " "))))
+
+parseLineProof :: Parser String Proof
+parseLineProof = defer \_ -> do
   ass <- optionMaybe parseFormula
-  string "|-" *> skipSpaces
-  concs <- parseConclusions
+  _ <- string "|-" *> (many (string " "))
+  concs <- parseLineConclusions
   pure (Proof (maybe FTrue identity ass) concs)
 
 parseCapture :: Parser String Capture
-parseCapture = ((uncurry Lines <$> intDecimal2) <|> Line <$> intDecimal)
+parseCapture = ((try (uncurry Lines <$> pos2)) <|> Line <$> pos)
   where
-  intDecimal2 :: Parser String (Tuple Int Int)
-  intDecimal2 = do
+  pos :: Parser String Int
+  pos = do
     n <- intDecimal
-    skipSpaces *> string "-" *> skipSpaces
-    m <- intDecimal
+    guard (n >= 0)
+    pure n
+
+  pos2 :: Parser String (Tuple Int Int)
+  pos2 = do
+    n <- pos
+    _ <- (many (string " ")) *> string "-" *> (many (string " "))
+    m <- pos
     pure (Tuple n m)
 
 parseCaptures :: Parser String (List Capture)
-parseCaptures = parseCapture `sepBy` (string "," *> skipSpaces)
+parseCaptures = parseCapture `sepBy` (string "," *> (many (string " ")))
 
 readParser :: forall a. Parser String a -> String -> Maybe a
 readParser p s = either (const Nothing) (apply Just) (runParser s (p <* eof))
@@ -114,8 +150,13 @@ readParser p s = either (const Nothing) (apply Just) (runParser s (p <* eof))
 readFormula :: String -> Maybe Formula
 readFormula = readParser parseFormula
 
-readProof :: String -> Maybe Proof
-readProof = readParser parseProof
+readLineProof :: String -> Maybe Proof
+readLineProof = readParser parseLineProof
+
+readProof :: String -> Either String Proof
+readProof s = case runParser s (parseProof 0 <* skipSpaces <* eof) of
+  Left err -> Left $ joinWith "\n" (parseErrorHuman s 20 err)
+  Right res -> Right res
 
 ruleTable :: Array (Tuple String Rule)
 ruleTable =
@@ -133,5 +174,36 @@ ruleTable =
   , Tuple "↔E" (Inf "↔E" iffElim)
   ]
 
-readRule :: String -> Maybe Rule
-readRule = flip lookup ruleTable
+readTable :: Array (Tuple String Rule)
+readTable =
+  [ Tuple "&I" (Inf "∧I" andIntro)
+  , Tuple "&E" (Inf "∧E" andElim)
+  , Tuple "|I" (Inf "∨I" orIntro)
+  , Tuple "|E" (Inf "∨E" orElim)
+  , Tuple "~I" (Inf "¬I" notIntro)
+  , Tuple "~E" (Inf "¬E" notElim)
+  , Tuple "->I" (Inf "→I" impIntro)
+  , Tuple "->E" (Inf "→E" impElim)
+  , Tuple "<->I" (Inf "↔I" iffIntro)
+  , Tuple "<->E" (Inf "↔E" iffElim)
+  ]
+
+validRules :: Array String
+validRules = map fst ruleTable <> map fst readTable
+
+parseRule :: Parser String Rule
+parseRule = do
+  r :: String <- choice $ (map string) validRules
+  let mR = lookup r ruleTable <|> lookup r readTable
+  pure (maybe Ass identity mR)
+
+parseJustification :: Parser String (Tuple Rule (Array Capture))
+parseJustification = do
+  rule <- parseRule
+  caps <- optionMaybe $ do
+    string "," *> skipSpaces
+    toUnfoldable <$> parseCaptures
+  pure (Tuple rule (maybe [] identity caps))
+
+readRule :: String -> Maybe (Tuple Rule (Array Capture))
+readRule = readParser parseJustification
