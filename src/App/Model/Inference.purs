@@ -5,8 +5,8 @@ import Prelude
 import Model.Proof (Conclusion(..), Proof, assumption, conclusions, extractFormula)
 import Model.Formula (Formula(..))
 
-import Data.List (List(..), catMaybes, elem, intersect, (:))
 import Control.Plus (empty)
+import Data.List (List(..), catMaybes, elem, intersect, (:))
 
 -- import Data.Set (Set)
 

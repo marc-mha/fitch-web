@@ -1,9 +1,10 @@
 module Model.Common where
 
 import Prelude
+
+import Control.Plus (class Plus, empty)
 import Data.List (List(..), length, take, (:))
 import Data.Tuple (Tuple(..))
-import Control.Plus (class Plus, empty)
 import Data.Unfoldable (replicate)
 
 enumerate :: forall a. List a -> List (Tuple Int a)

@@ -6,11 +6,10 @@ import Model.Formula (Formula)
 import Model.Scope (Scope, Scoped, inScope, isScope)
 import Model.Common (enumerate)
 
+import Control.Apply (lift2)
 import Data.List (List(..), reverse, singleton, snoc, span, (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst, uncurry)
-
-import Control.Apply (lift2)
 
 data Proof = Proof Formula (List Conclusion)
 
