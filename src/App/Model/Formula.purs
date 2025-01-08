@@ -1,4 +1,4 @@
-module Formula where
+module Model.Formula where
 
 import Prelude
 

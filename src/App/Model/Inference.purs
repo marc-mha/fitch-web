@@ -1,11 +1,11 @@
-module Inference where
+module Model.Inference where
 
-import Data.Maybe
-import Formula
 import Prelude
-import Proof
 
-import Data.List
+import Model.Proof (Conclusion(..), Proof, assumption, conclusions, extractFormula)
+import Model.Formula (Formula(..))
+
+import Data.List (List(..), catMaybes, elem, intersect, (:))
 import Control.Plus (empty)
 
 -- import Data.Set (Set)

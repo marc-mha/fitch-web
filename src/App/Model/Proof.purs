@@ -1,14 +1,16 @@
-module Proof where
+module Model.Proof where
 
-import Data.List
-import Data.Maybe
-import Data.Tuple
-import Formula
-import Scope
 import Prelude
 
+import Model.Formula (Formula)
+import Model.Scope (Scope, Scoped, inScope, isScope)
+import Model.Common (enumerate)
+
+import Data.List (List(..), reverse, singleton, snoc, span, (:))
+import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..), fst, uncurry)
+
 import Control.Apply (lift2)
-import Data.Array (replicate)
 
 data Proof = Proof Formula (List Conclusion)
 
@@ -70,26 +72,26 @@ unflattenProof :: List (Scoped FlatConclusion) -> Maybe Proof
 unflattenProof ((Tuple fscope (Assumption f)) : sfs) = Proof f <$> (reverse <$> (unflattenConclusions fscope sfs))
 unflattenProof _ = Nothing
 
-unlines' :: List String -> String
-unlines' Nil = ""
--- unlines' (s : Nil) = s
-unlines' (s : ss) = "\n" <> s <> unlines' ss
-
-showScope :: Int -> String
-showScope = (foldl (<>) "") <<< flip replicate "|   "
-
-showSub' :: Int -> Conclusion -> String
-showSub' n (SubFormula f) = showScope n <> show f
-showSub' n (SubProof p) = showProof' (n + 1) p
-
-showProof' :: Int -> Proof -> String
-showProof' n (Proof ass concs) = showScope (n - 1) <> "|__ " <> show' ass <> (unlines' <<< map (showSub' n) <<< reverse) concs
-  where
-  show' FTrue = ""
-  show' x = show x
-
-showProof :: Proof -> String
-showProof = showProof' 1
+-- unlines' :: List String -> String
+-- unlines' Nil = ""
+-- -- unlines' (s : Nil) = s
+-- unlines' (s : ss) = "\n" <> s <> unlines' ss
+--
+-- showScope :: Int -> String
+-- showScope = (foldl (<>) "") <<< flip replicate "|   "
+--
+-- showSub' :: Int -> Conclusion -> String
+-- showSub' n (SubFormula f) = showScope n <> show f
+-- showSub' n (SubProof p) = showProof' (n + 1) p
+--
+-- showProof' :: Int -> Proof -> String
+-- showProof' n (Proof ass concs) = showScope (n - 1) <> "|__ " <> show' ass <> (unlines' <<< map (showSub' n) <<< reverse) concs
+--   where
+--   show' FTrue = ""
+--   show' x = show x
+--
+-- showProof :: Proof -> String
+-- showProof = showProof' 1
 
 extractFormula :: Conclusion -> Maybe Formula
 extractFormula (SubFormula f) = Just f

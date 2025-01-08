@@ -1,8 +1,9 @@
-module Scope where
+module Model.Scope where
 
-import Data.List
-import Data.Tuple
 import Prelude
+
+import Data.List (List(..), reverse, (:))
+import Data.Tuple (Tuple)
 
 type Scope = List Int
 
@@ -21,10 +22,3 @@ inScope s t = inScope' (reverse s) (reverse t)
   inScope' (a : as) (b : bs)
     | a == b = inScope' as bs
     | otherwise = false
-
-enumerate :: forall a. List a -> List (Tuple Int a)
-enumerate = enumerate' 0
-  where
-  enumerate' _ Nil = Nil
-  enumerate' n (x : xs) = (Tuple n x) : enumerate' (n + 1) xs
-

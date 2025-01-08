@@ -1,18 +1,19 @@
-module Verification where
+module Model.Verification where
 
-import Control.MonadPlus
-import Data.List hiding (unzip)
-import Data.Maybe
-import Data.Tuple
-import Formula
-import Inference
 import Prelude
-import Proof
-import Scope
 
+import Model.Formula (Formula(..))
+import Model.Inference (Inference, canReplace)
+import Model.Proof (Conclusion(..), FlatConclusion(..), Proof, extractFlatFormula, flattenProof, unflattenProof)
+import Model.Scope (Scope, Scoped, inScope, isScope)
+
+import Control.MonadPlus (empty, guard)
+import Data.List (List, all, any, head, index, length, singleton, slice, tail)
+import Data.Maybe (Maybe)
+import Data.Tuple (Tuple(..), fst)
 import Data.Array (unzip)
 import Data.Bifunctor (rmap)
-import Data.Traversable (sequence, traverse)
+import Data.Traversable (traverse)
 
 data Capture = Line Int | Lines Int Int
 
@@ -63,15 +64,19 @@ infer scope p captures inf = do
 verify :: Proof -> Scoped FlatConclusion -> (Tuple Rule (Array Capture)) -> Maybe Boolean
 verify p (Tuple scope f) (Tuple r cs) = do
   inferences :: List Formula <- case r of
+    -- Assumptions can only be correctly applied to assumptions
     Ass -> case f of
+      -- Anything can be an assumption, so return meta
       Assumption _ -> pure (singleton FMeta)
-      Consequence _ -> empty
+      -- If you try to apply assumption to a consequence, tut tut
+      Consequence _ -> pure empty
     Reit -> case cs of
       [ Line l ] -> do
         (Tuple cscope f') <- getProofFormula p l
+        -- This should not be a false as it might be allowed, the capture is
+        -- just not acceptable
         guard (scope `inScope` cscope && not (scope `isScope` cscope))
         pure (singleton f')
-      _ -> empty
+      _ -> pure empty
     Inf _ inf -> infer scope p cs inf
-  pure <<< any (canReplace (extractFlatFormula f)) $ inferences
--- pure <<< any ((==) (extractFlatFormula f)) $ inferences
+  pure (any (canReplace (extractFlatFormula f)) inferences)
