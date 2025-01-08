@@ -21,7 +21,7 @@ type State = { rules :: List (Maybe (Tuple Rule (Array Capture))), proof :: Proo
 data Action = UpdateInput String | UpdateRule Int String
 
 renderProof :: forall w. List (Maybe (Tuple Rule (Array Capture))) -> Proof -> HH.HTML w Action
-renderProof rules p = HH.table [ HP.style "display: inline-block;" ] <<< toUnfoldable <<< rfc 0 (enumerate rules) $ fp
+renderProof rules p = HH.table [ HP.style "display: inline-block; vertical-align: top;" ] <<< toUnfoldable <<< rfc 0 (enumerate rules) $ fp
   where
   fp = flattenProof p
 
