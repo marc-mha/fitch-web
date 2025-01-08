@@ -30,10 +30,40 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-      
-      # Runs a single command using the runners shell
-      - name: Install toolchain
-        run: npm install -g purescript spago esbuild
+
+      - name: Set up a PureScript toolchain
+        # You may pin to the exact commit or the version.
+        # uses: purescript-contrib/setup-purescript@2330ad9736aba56d65964a3335fe9368c9674db8
+        uses: purescript-contrib/setup-purescript@v3.1.0
+        with:
+          # The compiler version to install. Examples: latest, 0.13.8
+          purescript: "latest" # optional, default is latest
+          # The Spago version to install. Examples: latest, 0.15.3
+          spago: "latest" # optional, default is latest
+          # # The psa version to install. Examples: latest, 0.7.2
+          # psa: # optional, default is latest
+          # # The purs-tidy version to install. Examples: latest, 0.1.1
+          # purs-tidy: # optional
+          # # The Zephyr version to install. Examples: latest, 0.3.2
+          # zephyr: # optional
+
+      # Installs the bundler used by spago
+      - name: Install esbuild
+        run: npm install -g esbuild
+
+      - name: Cache PureScript dependencies
+        uses: actions/cache@v4
+        # This cache uses the .dhall files to know when it should reinstall
+        # and rebuild packages. It caches both the installed packages from
+        # the `.spago` directory and compilation artifacts from the `output`
+        # directory. When restored the compiler will rebuild any files that
+        # have changed. If you do not want to cache compiled output, remove
+        # the `output` path.
+        with:
+          key: ${{ runner.os }}-spago-${{ hashFiles('**/*.dhall') }}
+          path: |
+            .spago
+            output
 
       # Runs the command to compile and bundle the assets
       - name: Compile and bundle
