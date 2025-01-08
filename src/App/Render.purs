@@ -2,27 +2,26 @@ module App.Render where
 
 import Prelude
 
-import Model.Common (enumerate)
-import Model.Proof (FlatConclusion(..), Proof, flattenProof)
-import Model.Scope (Scope, Scoped)
-import Model.Verification (Capture, Rule, verify)
-
+import Data.Array (replicate)
 import Data.List (List(..), foldl, length, toUnfoldable, (:))
 import Data.Maybe (Maybe(..), maybe)
-import Data.Tuple (Tuple(..), fst, snd)
-import Data.Array (replicate)
 import Data.String (joinWith)
+import Data.Tuple (Tuple(..), fst, snd)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Core as HC
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
+import Model.Common (enumerate)
+import Model.Proof (FlatConclusion(..), Proof, flattenProof)
+import Model.Scope (Scope, Scoped)
+import Model.Verification (Capture, Rule, verify)
 
 type State = { rules :: List (Maybe (Tuple Rule (Array Capture))), proof :: Proof, error :: String }
 data Action = UpdateInput String | UpdateRule Int String
 
 renderProof :: forall w. List (Maybe (Tuple Rule (Array Capture))) -> Proof -> HH.HTML w Action
-renderProof rules p = HH.table_ <<< toUnfoldable <<< rfc 0 (enumerate rules) $ fp
+renderProof rules p = HH.table [ HP.style "display: inline-block; vertical-align: top;" ] <<< toUnfoldable <<< rfc 0 (enumerate rules) $ fp
   where
   fp = flattenProof p
 
@@ -44,12 +43,13 @@ renderProof rules p = HH.table_ <<< toUnfoldable <<< rfc 0 (enumerate rules) $ f
 
 renderPage :: forall cs m. State -> H.ComponentHTML Action cs m
 renderPage st =
-  HH.div_
+  HH.span_
     [ HH.textarea
         [ HP.placeholder "Type in proof..."
         , HE.onValueInput UpdateInput
+        , HP.style "display: inline-block;"
         ]
-    , HH.br_
+    -- , HH.br_
     , renderProof st.rules st.proof
     ]
 
