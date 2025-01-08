@@ -31,7 +31,7 @@ renderProof rules p = HH.table_ <<< toUnfoldable <<< rfc 0 (enumerate rules) $ f
     where
     show' :: Tuple Rule (Array Capture) -> String
     -- show' (Tuple r' []) = show r' <> " " <> show'' (verify p c <$> r)
-    show' r' = show (fst r') <> ", " <> joinWith ", " ((map show <<< snd) r') <> " " <> show'' (verify p c r')
+    show' r' = show (fst r') <> ", " <> joinWith ", " ((map show <<< snd) r') <> " " <> show'' (verify p n c r')
 
     show'' :: (Maybe Boolean) -> String
     -- The capture is inaccessible

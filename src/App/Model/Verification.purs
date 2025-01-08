@@ -17,6 +17,10 @@ import Data.Traversable (traverse)
 
 data Capture = Line Int | Lines Int Int
 
+before :: Capture -> Int -> Boolean
+before (Line m) l = m < l
+before (Lines _ n) l = n < l
+
 instance Show Capture where
   show (Line n) = show n
   show (Lines n m) = show n <> "-" <> show m
@@ -61,8 +65,9 @@ infer scope p captures inf = do
   -- Return the result of the inference
   pure (inf premises)
 
-verify :: Proof -> Scoped FlatConclusion -> (Tuple Rule (Array Capture)) -> Maybe Boolean
-verify p (Tuple scope f) (Tuple r cs) = do
+verify :: Proof -> Int -> Scoped FlatConclusion -> (Tuple Rule (Array Capture)) -> Maybe Boolean
+verify p n (Tuple scope f) (Tuple r cs) = do
+  guard (all (_ `before` n) cs)
   inferences :: List Formula <- case r of
     -- Assumptions can only be correctly applied to assumptions
     Ass -> case f of

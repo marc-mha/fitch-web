@@ -1,14 +1,14 @@
 module Parser.Verification where
 
-import Prelude (bind, discard, identity, map, pure, ($), (*>), (<$>), (<>), (>=))
+import Prelude (bind, discard, identity, map, pure, ($), (*>), (<$>), (<=), (<>), (>=))
 
-import Model.Verification (Capture(..), Rule(..))
 import Model.Inference (andElim, andIntro, iffElim, iffIntro, impElim, impIntro, notElim, notIntro, orElim, orIntro)
+import Model.Verification (Capture(..), Rule(..))
 
 import Control.MonadPlus (guard)
+import Data.Foldable (lookup)
 import Data.List (List, toUnfoldable)
 import Data.Maybe (maybe)
-import Data.Foldable (lookup)
 import Data.Tuple (Tuple(..), fst, uncurry)
 import Parsing (Parser)
 import Parsing.Combinators (choice, many, optionMaybe, sepBy, try, (<|>))
@@ -29,6 +29,7 @@ parseCapture = ((try (uncurry Lines <$> pos2)) <|> Line <$> pos)
     n <- pos
     _ <- (many (string " ")) *> string "-" *> (many (string " "))
     m <- pos
+    guard (n <= m)
     pure (Tuple n m)
 
 parseCaptures :: Parser String (List Capture)
